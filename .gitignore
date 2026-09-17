@@ -1,0 +1,19 @@
+# 运行时与构建产物（Release 分发，不入库）
+client/runtime/
+dist/
+plugin/dist/
+plugin/node_modules/
+
+# 用户本机数据（配置 / 凭证 / 演示账户状态 / 会话 / Skill 同步清单）
+client/home/
+client/wenmai-config.json
+client/wenmai-skills-manifest.json
+client/mock-walmart-state.json
+wenmai-config.json
+wenmai-skills-manifest.json
+mock-walmart-state.json
+test-config.json
+
+# 系统
+.DS_Store
+Thumbs.db

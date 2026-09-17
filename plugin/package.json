@@ -1,0 +1,11 @@
+{
+  "name": "wenmai-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-tools": "^0.0.1-rc.1",
+    "esbuild": "^0.28.2"
+  }
+}
