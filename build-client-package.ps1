@@ -17,10 +17,10 @@ if (-not (Test-Path "$src\runtime\dsh\node_modules\@deepseek-ai\dsh\lib\bin.js")
   throw "DSH runtime missing: client\runtime\dsh（先复制 DSH 运行时，见 README 从源码构建）"
 }
 
-# 0) 编译三个插件
+# 0) 编译两个插件
 Push-Location (Join-Path $base 'plugin')
 try {
-  foreach ($p in @('wenmai-plugin', 'platform-plugin', 'walmart-plugin')) {
+  foreach ($p in @('wenmai-plugin', 'platform-plugin')) {
     & npx esbuild "src\$p.ts" --bundle --platform=node --format=esm --charset=utf8 --outfile="dist\$p.mjs" --external:@deepseek-ai/cordis --external:@deepseek-ai/dsh-tools --log-level=warning
     if ($LASTEXITCODE -ne 0) { throw "esbuild failed for $p`: $LASTEXITCODE" }
   }
@@ -34,13 +34,13 @@ foreach ($f in @('启动.bat', 'launch.mjs', 'bootstrap.mjs', 'run-dsh.mjs', '�
   Copy-Item (Join-Path $src $f) (Join-Path $stage $f) -Force
 }
 
-# 2) 工作区模板（AGENTS.md 员工路由 + 27 个任务 Skill + tasks 说明）
+# 2) 工作区模板（AGENTS.md 员工路由 + 23 个任务 Skill + tasks 说明）
 New-Item -ItemType Directory -Path "$stage\workspace\tasks" -Force | Out-Null
 Copy-Item (Join-Path $base 'workspace\AGENTS.md') "$stage\workspace\AGENTS.md" -Force
 Copy-Item "$src\workspace\tasks\README.md" "$stage\workspace\tasks\README.md" -Force
 Copy-Item (Join-Path $base 'workspace\.dsh\skills') "$stage\workspace\.dsh\skills" -Recurse -Force
 $skillCount = (Get-ChildItem "$stage\workspace\.dsh\skills" -Directory).Count
-if ($skillCount -ne 27) { throw "skill count is $skillCount, expected 27" }
+if ($skillCount -ne 23) { throw "skill count is $skillCount, expected 23" }
 
 # 3) 便携 Node 运行时
 Copy-Item $NodeExe "$stage\runtime\node\node.exe" -Force
@@ -48,7 +48,7 @@ Copy-Item $NodeExe "$stage\runtime\node\node.exe" -Force
 # 4) DSH 运行时（裁掉非 win32-x64 原生预编译）
 Copy-Item "$src\runtime\dsh\package.json" "$stage\runtime\dsh\package.json" -Force
 New-Item -ItemType Directory -Path "$stage\runtime\dsh\plugins" -Force | Out-Null
-foreach ($p in @('wenmai-plugin', 'platform-plugin', 'walmart-plugin')) {
+foreach ($p in @('wenmai-plugin', 'platform-plugin')) {
   Copy-Item "$base\plugin\dist\$p.mjs" "$stage\runtime\dsh\plugins\$p.mjs" -Force
 }
 $excluded = @('darwin-arm64', 'darwin-x64', 'linux-arm64', 'linux-x64', 'win32-arm64', 'sharp-wasm32')
@@ -59,7 +59,6 @@ if ($LASTEXITCODE -ge 8) { throw "robocopy failed: $LASTEXITCODE" }
 if (Test-Path "$stage\home") { throw 'staging contains home/ — abort' }
 if (Test-Path "$stage\wenmai-config.json") { throw 'staging contains wenmai-config.json — abort' }
 if (Test-Path "$stage\wenmai-skills-manifest.json") { throw 'staging contains wenmai-skills-manifest.json — abort' }
-if (Test-Path "$stage\mock-walmart-state.json") { throw 'staging contains mock-walmart-state.json — abort' }
 $secretHit = Get-ChildItem $stage -Recurse -File -Include *.json,*.yaml,*.yml,*.bat,*.mjs |
   Select-String -Pattern 'dp_[A-Za-z0-9]{16,}|sl_agent_[A-Za-z0-9]{16,}|sk-[A-Za-z0-9]{20,}' -List
 if ($secretHit) { throw "possible secret leak in staging: $($secretHit.Path -join ', ')" }
@@ -67,7 +66,6 @@ foreach ($must in @(
     "$stage\runtime\dsh\node_modules\@deepseek-ai\dsh\lib\bin.js",
     "$stage\runtime\dsh\plugins\wenmai-plugin.mjs",
     "$stage\runtime\dsh\plugins\platform-plugin.mjs",
-    "$stage\runtime\dsh\plugins\walmart-plugin.mjs",
     "$stage\runtime\dsh\node_modules\@deepseek-ai\dsh-tools\lib\index.js",
     "$stage\runtime\dsh\node_modules\node-pty\prebuilds\win32-x64\conpty.node",
     "$stage\runtime\node\node.exe",
@@ -93,5 +91,5 @@ $zipped = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 Write-Host ""
 Write-Host "[build] staging : $stage  ($unpacked MB unpacked)"
 Write-Host "[build] package : $zip  ($zipped MB)"
-Write-Host "[build] skills  : $skillCount 个任务模板；插件：wenmai-platform / platform-client / walmart-ads"
-Write-Host "[build] 用户需要：安装包 + 自己的模型 API Key（平台邀请码 / Walmart 凭证可选）"
+Write-Host "[build] skills  : $skillCount 个任务模板；插件：wenmai-platform / platform-client"
+Write-Host "[build] 用户需要：安装包 + 平台邀请码（注册自动下发模型与数据服务）"

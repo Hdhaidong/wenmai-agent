@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // bootstrap.mjs — wenmai agent 首次配置向导（本地独立，无平台依赖）
-// 流程：模型配置（必填）→ 数据平台接入（可选，邀请码注册/手动 Key）→ 平台协议地址 → Walmart Connect（演示/直连）→ 写入配置
+// 流程：模型配置（可跳过）→ 数据平台接入（邀请码注册自动下发模型 / 手动 Key）→ 平台协议地址 → 写入配置
 import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import { writeFile, mkdir, access, realpath } from 'node:fs/promises'
@@ -11,6 +11,19 @@ import { fileURLToPath } from 'node:url'
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const CONFIG_FILE = path.join(ROOT, 'wenmai-config.json')
 const DEFAULT_PLATFORM_URL = 'https://api.insightmarketplac.com'
+
+function parseModelGateway(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const gw = raw
+  if (typeof gw.url !== 'string' || !/^https?:\/\/.+/.test(gw.url)) return null
+  if (typeof gw.api_key !== 'string' || gw.api_key.length < 8) return null
+  if (!Array.isArray(gw.models) || gw.models.length === 0) return null
+  const models = gw.models
+    .filter((m) => m && typeof m.id === 'string' && m.id !== '')
+    .map((m) => ({ id: m.id, name: (typeof m.name === 'string' && m.name !== '') ? m.name : m.id }))
+  if (models.length === 0) return null
+  return { url: gw.url, api_key: gw.api_key, models }
+}
 
 const rl = readline.createInterface({ input: stdin, output: stdout })
 const ask = async (q, def = '') => {
@@ -28,8 +41,9 @@ console.log('  稳卖调研 Agent · 首次配置向导')
 console.log('==========================================')
 console.log('')
 
-// ---- [1/4] 模型配置（必填）----
-console.log('[1/4] 模型配置（任意 OpenAI 兼容服务）')
+// ---- [1/3] 模型配置（可跳过：邀请码注册后自动下发）----
+console.log('[1/3] 模型配置（任意 OpenAI 兼容服务）')
+console.log('  若下一步用邀请码注册，平台会自动下发模型服务，此处可全部回车跳过。')
 const provider = await ask('  选择提供商：1 DeepSeek（推荐）  2 OpenAI  3 其他兼容服务 [1]: ', '1')
 let baseURL = 'https://api.deepseek.com/v1'
 let providerName = 'DeepSeek'
@@ -41,11 +55,7 @@ if (provider === '3') {
     baseURL = await ask('  格式不正确，请以 http:// 或 https:// 开头重新输入: ')
   }
 }
-const apiKey = await ask(`  ${providerName} API Key（sk- 开头）: `)
-while (!apiKey || apiKey.length < 8) {
-  console.log('  API Key 不能为空。')
-  apiKey = await ask(`  ${providerName} API Key: `)
-}
+let apiKey = await ask(`  ${providerName} API Key（sk- 开头，回车跳过等平台下发）: `, '')
 let models
 if (provider === '1') {
   models = [
@@ -57,10 +67,10 @@ if (provider === '1') {
   models = [{ id: modelId, name: modelId }]
 }
 
-// ---- [2/4] 数据平台接入（可选）----
+// ---- [2/3] 数据平台接入（可选）----
 console.log('')
-console.log('[2/4] 稳卖调研平台 · 数据服务（调研 / 选品 / 竞品数据）')
-console.log('  不接入也能用（广告演示模式 + Reddit 情报），但调研类 Skill 会提示数据源未连接。')
+console.log('[2/3] 稳卖调研平台 · 数据服务（调研 / 选品 / 竞品数据）')
+console.log('  不接入也能用（本地模型对话 + 任务 Skill），但调研类 Skill 会提示数据源未连接。')
 const dpMode = await ask('  选择：1 邀请码注册（推荐）  2 手动填 API Key  3 暂不接入 [1]: ', '1')
 
 let platformUrl = DEFAULT_PLATFORM_URL
@@ -93,6 +103,14 @@ if (dpMode !== '3') {
       }
       dataApiKey = payload.data.key
       console.log(`  注册成功：${payload.data.name}（权限：${(payload.data.scopes || []).join(', ')}）`)
+      const gateway = parseModelGateway(payload.data.model_gateway)
+      if (gateway) {
+        providerName = 'insightmarketplac'
+        baseURL = gateway.url
+        apiKey = gateway.api_key
+        models = gateway.models
+        console.log('  模型服务已按平台配置自动写入，无需手动填写 Key。')
+      }
     } catch (e) {
       console.log(`  注册失败：${e instanceof Error ? e.message : String(e)}`)
       const manual = await ask('  改为手动填入 API Key（dp_ 开头，直接回车跳过接入）：')
@@ -107,30 +125,23 @@ if (dpMode !== '3') {
   }
 }
 
-// ---- [3/4] 平台协议（Agent Protocol）----
+// ---- [3/3] 平台协议（Agent Protocol）----
 console.log('')
-console.log('[3/4] 稳卖调研平台 · Agent 协议（社区 / Skill 市场）')
+console.log('[3/3] 稳卖调研平台 · Agent 协议（社区 / Skill 市场）')
 console.log('  会话里说「绑定平台」用配对 Token 完成绑定即可，这里只需确认地址。')
 const protoUrl = await ask(`  协议地址 [${platformUrl}]: `, platformUrl)
 
-// ---- [4/4] Walmart Connect ----
-console.log('')
-console.log('[4/4] Walmart Connect 广告数据')
-console.log('  未接入 Walmart Connect API 也能用：内置演示模式（模拟账户跑通全部功能）。')
-const wmMode = await ask('  选择：1 演示模式（推荐先体验）  2 直连模式（需 API 凭证）[1]: ', '1')
-
-const walmart = { mode: 'mock' }
-if (wmMode === '2') {
-  walmart.mode = 'live'
-  walmart.client_id = await ask('  Client ID: ')
-  walmart.client_secret = await ask('  Client Secret: ')
-  walmart.consumer_id = await ask('  Consumer ID: ')
-  walmart.key_version = await ask('  Key Version [1]: ', '1')
-  const pk = await ask('  私钥（一行粘贴，换行用 \\n 表示；或稍后在 wenmai-config.json 里填 private_key_file 指向 PEM 文件）: ')
-  if (pk) walmart.private_key = pk
-  walmart.advertiser_id = await ask('  Advertiser ID（广告主 ID）: ')
-  console.log('  已保存直连配置。首次调用若鉴权失败，请核对 consumer_id / 私钥 / key_version。')
+// ---- 模型兜底校验 ----
+if (!apiKey) {
+  console.log('')
+  console.log('  未获得模型配置：注册未返回模型服务，且未手动填写 API Key。')
+  apiKey = await ask(`  请填写 ${providerName} API Key（sk- 开头）: `)
+  while (!apiKey || apiKey.length < 8) {
+    console.log('  API Key 不能为空。')
+    apiKey = await ask(`  请填写 ${providerName} API Key: `)
+  }
 }
+
 rl.close()
 
 // ---- 写入配置 ----
@@ -143,7 +154,6 @@ const config = {
   ...(dpMode !== '3' ? { data_platform_url: platformUrl } : {}),
   ...(dataApiKey ? { data_api_key: dataApiKey } : {}),
   model: { provider: providerName, base_url: baseURL, models },
-  walmart,
 }
 await writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n', 'utf8')
 
