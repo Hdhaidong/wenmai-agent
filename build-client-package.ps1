@@ -34,7 +34,7 @@ foreach ($f in @('启动.bat', 'launch.mjs', 'bootstrap.mjs', 'run-dsh.mjs', '�
   Copy-Item (Join-Path $src $f) (Join-Path $stage $f) -Force
 }
 
-# 2) 工作区模板（AGENTS.md 员工路由 + 23 个任务 Skill + tasks 说明）
+# 2) 工作区模板（AGENTS.md + 23 个任务 Skill + tasks 说明）
 New-Item -ItemType Directory -Path "$stage\workspace\tasks" -Force | Out-Null
 Copy-Item (Join-Path $base 'workspace\AGENTS.md') "$stage\workspace\AGENTS.md" -Force
 Copy-Item "$src\workspace\tasks\README.md" "$stage\workspace\tasks\README.md" -Force

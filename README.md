@@ -1,14 +1,13 @@
 # 稳卖调研 Agent
 
-**跨境电商数字员工团队客户端** — 一句话派活，7 个数字员工（市场调研 / 选品 / 竞品监控 / 打单 / Listing / 上架 / 图片设计）按 23 个任务 Skill 执行；邀请码注册即可接入平台数据服务与 Skill 市场同步，模型服务随注册自动下发。
+**跨境电商调研客户端** — 一句话派活，23 个任务 Skill 覆盖调研、选品、竞品、单证、Listing、上架、图片全流程；邀请码注册即可接入平台数据服务与 Skill 市场同步，模型服务随注册自动下发。
 
-> A cross-border e-commerce digital-employee client, powered by [DeepSeek Harness](https://github.com/deepseek-ai) — dispatch tasks in plain language to 7 persona agents backed by 23 task skills, with invite-code registration for platform data services and skill-market sync.
+> A cross-border e-commerce research client, powered by [DeepSeek Harness](https://github.com/deepseek-ai) — dispatch tasks in plain language, executed by 23 task skills, with invite-code registration for platform data services and skill-market sync.
 
 ## ✨ 功能
 
 | 模块 | 说明 |
 |------|------|
-| 🧑‍💼 数字员工路由 | 7 个员工人设 + 任务 Skill 匹配表（AGENTS.md），多员工任务自动拆分依序执行 |
 | 📋 23 个任务 Skill | 调研（市场/竞品/VOC/多平台）、选品（潜力/Go-NoGo/历史）、竞品（异动/排名/促销）、单证（报关单 L2/模板）、Listing（标题/五点）、上架（六平台，全部 L2）、图片（白底/场景/A+） |
 | 📡 平台数据服务 | 邀请码自助注册即接入：搜索 / 网页抓取 / 零售商品数据 / 只读数据仓库，客户端只持平台 Key，不接触上游数据源 |
 | 🤝 Agent 协议 | 会话内「绑定平台」完成配对：身份心跳、社区互动、Skill 市场（Git 式拉取更新）、脱敏草稿提交 |
@@ -43,17 +42,17 @@ cd wenmai-agent
 powershell -NoProfile -ExecutionPolicy Bypass -File build-client-package.ps1
 ```
 
-## 🧑‍💼 数字员工与任务 Skill
+## 📋 任务 Skill
 
-| 员工 | 任务 Skill |
+| 类别 | 任务 Skill |
 |---|---|
-| 市场调研员 | 市场调研 / 竞品调研 / VOC 挖掘 / 多平台对比 |
-| 选品分析师 | 潜力选品 / Go-NoGo 决策 / 历史数据回溯 |
-| 竞品监控哨兵 | 竞品异动 / 排名跟踪 / 促销 deals |
-| 打单专员 | 报关单制作（L2）/ 单证模板 |
-| Listing 工程师 | 标题生成 / 五点描述 |
-| 上架专员 | Walmart / Ozon / Wildberries / eBay / MercadoLibre / Kogan 上架（全部 L2） |
-| 图片设计师 | 白底图 / 场景图 / A+ 页面 |
+| 调研 | 市场调研 / 竞品调研 / VOC 挖掘 / 多平台对比 |
+| 选品 | 潜力选品 / Go-NoGo 决策 / 历史数据回溯 |
+| 竞品 | 竞品异动 / 排名跟踪 / 促销 deals |
+| 单证 | 报关单制作（L2）/ 单证模板 |
+| Listing | 标题生成 / 五点描述 |
+| 上架 | Walmart / Ozon / Wildberries / eBay / MercadoLibre / Kogan 上架（全部 L2） |
+| 图片 | 白底图 / 场景图 / A+ 页面 |
 
 任务模板位于 `workspace\.dsh\skills\`（23 个），绑定平台后可通过 Skill 市场同步更新。
 
@@ -103,7 +102,7 @@ wenmai-agent/
 │   └── runtime/             DSH 运行时（构建时填充，不入库）
 ├── plugin/                  两个插件的 TypeScript 源码与编译产物
 │   └── src/  wenmai-plugin.ts · platform-plugin.ts
-├── workspace/               工作区模板（AGENTS.md 员工路由 + 23 个任务 Skill）
+├── workspace/               工作区模板（AGENTS.md + 23 个任务 Skill）
 └── build-client-package.ps1 打包脚本
 ```
 
