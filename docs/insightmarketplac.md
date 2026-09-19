@@ -4,6 +4,8 @@
 
 > 开箱即用：平台数据服务与模型已预置在安装包内，无需注册、无需配置任何 API Key，安装即用。
 
+> **开源说明**：本仓库开源的是「稳卖调研 Agent」项目；insightmarketplac 客户端**源代码不开放**，仅在此公开发布安装包，任何人可自行下载使用。
+
 ## 📥 下载安装（Windows）
 
 1. 打开 [Releases 页面](../../releases)，找到 **insightmarketplac 客户端 v1.0.0**；

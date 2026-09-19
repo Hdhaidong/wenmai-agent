@@ -122,6 +122,8 @@ wenmai-agent/
 
 **AI 品牌出海调研客户端**（Home Depot 渠道）— 价格 / 库存 / 容量 / 趋势速览，调研、竞品、广告、Listing、利润、促销全流程，一次出完整报告。零配置安装即用。
 
+> 客户端源代码不开放，安装包在本仓库 Releases 公开发布，可自行下载。
+
 - 📄 说明页与下载指引：[docs/insightmarketplac.md](docs/insightmarketplac.md)
 - 📦 安装包：[Releases](../../releases) 中「insightmarketplac 客户端」
 - 📮 联系：haidong.zhou@outlook.com
